@@ -1,0 +1,64 @@
+name: Freshservice Ticket Workflow
+
+on:
+  repository_dispatch:
+    types: [freshservice_ticket_created]
+
+jobs:
+  process_ticket:
+    runs-on: ubuntu-latest
+    env:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_API_KEY }}
+      FRESHSERVICE_URL: ${{ secrets.FRESHSERVICE_URL }}
+      FRESHSERVICE_API_KEY: ${{ secrets.FRESHSERVICE_API_KEY }}
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          semgrep install-semgrep-pro
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+
+      - name: Cache Go modules and license-detector
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+            ~/go/bin
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install license-detector if not cached
+        run: |
+          if ! command -v license-detector &> /dev/null; then
+            go install github.com/go-enry/go-license-detector/v4/cmd/license-detector@latest
+          fi
+          echo "${HOME}/go/bin" >> $GITHUB_PATH
+
+      - name: Run compliance scan script
+        env:
+          FRESHSERVICE_API_KEY: ${{ secrets.FRESHSERVICE_API_KEY }}
+          SEMGREP_API_KEY: ${{ secrets.SEMGREP_API_KEY }}
+        run: |
+          python script.py "${{ github.event.client_payload.repo_url }}" "${{ github.event.client_payload.ticket_id }}" "${{ github.event.client_payload.agent_id }}" "${{ github.event.client_payload.operation }}"
+
+
+      - name: Uploading the output
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-download
+          path: "*_*_compliance_report.xlsx"
