@@ -283,7 +283,7 @@ def main():
     else:
         note_msg = (
             "<div>Automated compliance scan complete.</div>"
-            f"<div style='margin-top:8px;'>{'Heads up: critical/high issues detected—please refer to the attached report.' if sc['CRITICAL']>0 or sc['HIGH']>0 else 'All clear: no critical/high findings. Great job!'}</div>"
+            f"<div style='margin-top:8px;'>{'Heads up: critical/high issues detected—please refer to the attached report.' if sc['CRITICAL']>0 or sc['HIGH']>0 else 'All clear: no critical/high findings. Good to go!!!'}</div>"
         )
     proc.post_note_to_ticket(note_msg, attach_id)
     proc.add_private_note_if_needed(lic[1], sec_cnt)
