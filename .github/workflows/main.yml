@@ -2,7 +2,7 @@ name: Freshservice Ticket Workflow
 
 on:
   repository_dispatch:
-    types: [freshservice_ticket_created]
+    types: [freshservice_ticket_created_1]
 
 jobs:
   process_ticket:
